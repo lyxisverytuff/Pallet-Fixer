@@ -1,0 +1,51 @@
+using MelonLoader;
+using HarmonyLib;
+using System;
+using SLZ.Marrow.Utilities;
+using SLZ.Marrow.Warehouse;
+using Il2CppSystem.Collections.Generic;
+
+[assembly: MelonInfo(typeof(SpawnGunFix.Main), "SpawnGunFix", "1.0.0", "palofsc")]
+[assembly: MelonGame("Stress Level Zero", "BONELAB")]
+
+namespace SpawnGunFix
+{
+    public class Main : MelonMod
+    {
+        private float nextSortTime = 0f;
+
+        public override void OnUpdate()
+        {
+            if (Time.time < nextSortTime) return;
+            nextSortTime = Time.time + 2f; // Check every 2 seconds
+
+            try
+            {
+                var guns = GameObject.FindObjectsOfType<UtilitySpawnGun>();
+                foreach (var gun in guns)
+                {
+                    if (gun == null || gun.spawnableCrates == null) continue;
+                    var list = gun.spawnableCrates;
+                    
+                    // Check if sorted, if not, sort it.
+                    bool needsSort = false;
+                    for (int i = 0; i < list.Count - 1; i++)
+                    {
+                        if (string.Compare(list[i].Title, list[i+1].Title, StringComparison.OrdinalIgnoreCase) > 0)
+                        {
+                            needsSort = true;
+                            break;
+                        }
+                    }
+
+                    if (needsSort)
+                    {
+                        list.Sort(new Il2CppSystem.Comparison<SpawnableCrate>((a, b) => string.Compare(a.Title, b.Title, StringComparison.OrdinalIgnoreCase)));
+                        MelonLogger.Msg("Sorted spawn gun pallets.");
+                    }
+                }
+            }
+            catch {}
+        }
+    }
+}
